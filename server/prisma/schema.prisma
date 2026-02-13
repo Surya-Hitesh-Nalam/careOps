@@ -1,0 +1,295 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─── Enums ───────────────────────────────────────────────────────
+
+enum Role {
+  owner
+  staff
+}
+
+enum BookingStatus {
+  confirmed
+  completed
+  no_show
+  cancelled
+}
+
+enum FormsStatus {
+  not_required
+  pending
+  partial
+  completed
+}
+
+enum ContactSource {
+  contact_form
+  booking
+  manual
+}
+
+enum MessageSender {
+  system
+  staff
+  customer
+}
+
+enum MessageChannel {
+  email
+  sms
+  system
+}
+
+enum FormFieldType {
+  text
+  email
+  phone
+  textarea
+  select
+  checkbox
+  file
+  date
+  number
+}
+
+enum SubmissionStatus {
+  pending
+  completed
+  overdue
+}
+
+enum AutomationStatus {
+  success
+  failed
+  skipped
+}
+
+// ─── Models ──────────────────────────────────────────────────────
+
+model User {
+  id          String    @id @default(cuid())
+  name        String
+  email       String    @unique
+  password    String
+  role        Role      @default(staff)
+  workspaceId String?
+  workspace   Workspace? @relation(fields: [workspaceId], references: [id])
+  permissions Json      @default("{\"inbox\":true,\"bookings\":true,\"forms\":true,\"inventory\":false,\"contacts\":true}")
+  avatar      String    @default("")
+  lastLogin   DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  ownedWorkspaces  Workspace[] @relation("WorkspaceOwner")
+  assignedConversations Conversation[] @relation("AssignedTo")
+}
+
+model Workspace {
+  id              String   @id @default(cuid())
+  name            String
+  type            String   @default("")
+  address         String   @default("")
+  timezone        String   @default("UTC")
+  contactEmail    String   @default("")
+  phone           String   @default("")
+  logo            String   @default("")
+  ownerId         String
+  owner           User     @relation("WorkspaceOwner", fields: [ownerId], references: [id])
+  isActive        Boolean  @default(false)
+  onboardingStep  Int      @default(1)
+  emailConfig     Json     @default("{\"provider\":\"\",\"host\":\"\",\"port\":587,\"user\":\"\",\"pass\":\"\",\"configured\":false}")
+  smsConfig       Json     @default("{\"provider\":\"\",\"sid\":\"\",\"authToken\":\"\",\"phone\":\"\",\"configured\":false}")
+  settings        Json     @default("{\"accentColor\":\"#6366f1\",\"fontScale\":1,\"sidebarPosition\":\"left\"}")
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  users           User[]
+  services        Service[]
+  availabilities  Availability[]
+  bookings        Booking[]
+  contacts        Contact[]
+  conversations   Conversation[]
+  formTemplates   FormTemplate[]
+  formSubmissions FormSubmission[]
+  inventoryItems  InventoryItem[]
+  automationLogs  AutomationLog[]
+}
+
+model Service {
+  id          String   @id @default(cuid())
+  name        String
+  description String   @default("")
+  duration    Int
+  price       Float    @default(0)
+  location    String   @default("")
+  color       String   @default("#6366f1")
+  isActive    Boolean  @default(true)
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id])
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  availabilities Availability[]
+  bookings       Booking[]
+}
+
+model Availability {
+  id          String   @id @default(cuid())
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id])
+  serviceId   String
+  service     Service  @relation(fields: [serviceId], references: [id])
+  dayOfWeek   Int
+  slots       Json     @default("[]")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([workspaceId, serviceId, dayOfWeek])
+}
+
+model Booking {
+  id           String        @id @default(cuid())
+  contactId    String
+  contact      Contact       @relation(fields: [contactId], references: [id])
+  serviceId    String
+  service      Service       @relation(fields: [serviceId], references: [id])
+  workspaceId  String
+  workspace    Workspace     @relation(fields: [workspaceId], references: [id])
+  date         DateTime
+  time         String
+  endTime      String        @default("")
+  status       BookingStatus @default(confirmed)
+  notes        String        @default("")
+  formsStatus  FormsStatus   @default(not_required)
+  reminderSent Boolean       @default(false)
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  formSubmissions FormSubmission[]
+
+  @@index([workspaceId, date])
+}
+
+model Contact {
+  id          String        @id @default(cuid())
+  name        String
+  email       String        @default("")
+  phone       String        @default("")
+  message     String        @default("")
+  source      ContactSource @default(manual)
+  workspaceId String
+  workspace   Workspace     @relation(fields: [workspaceId], references: [id])
+  tags        Json          @default("[]")
+  notes       String        @default("")
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  bookings        Booking[]
+  conversations   Conversation[]
+  formSubmissions FormSubmission[]
+
+  @@index([workspaceId, email])
+}
+
+model Conversation {
+  id               String   @id @default(cuid())
+  contactId        String
+  contact          Contact  @relation(fields: [contactId], references: [id])
+  workspaceId      String
+  workspace        Workspace @relation(fields: [workspaceId], references: [id])
+  lastMessage      String   @default("")
+  lastMessageAt    DateTime @default(now())
+  unreadCount      Int      @default(0)
+  automationPaused Boolean  @default(false)
+  assignedToId     String?
+  assignedTo       User?    @relation("AssignedTo", fields: [assignedToId], references: [id])
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  messages Message[]
+
+  @@index([workspaceId, lastMessageAt])
+}
+
+model Message {
+  id             String         @id @default(cuid())
+  conversationId String
+  conversation   Conversation   @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  sender         MessageSender
+  channel        MessageChannel @default(system)
+  body           String
+  read           Boolean        @default(false)
+  timestamp      DateTime       @default(now())
+}
+
+model FormTemplate {
+  id             String   @id @default(cuid())
+  title          String
+  description    String   @default("")
+  fields         Json     @default("[]")
+  linkedServices Json     @default("[]")
+  workspaceId    String
+  workspace      Workspace @relation(fields: [workspaceId], references: [id])
+  isActive       Boolean  @default(true)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  submissions FormSubmission[]
+}
+
+model FormSubmission {
+  id          String           @id @default(cuid())
+  templateId  String
+  template    FormTemplate     @relation(fields: [templateId], references: [id])
+  bookingId   String?
+  booking     Booking?         @relation(fields: [bookingId], references: [id])
+  contactId   String
+  contact     Contact          @relation(fields: [contactId], references: [id])
+  workspaceId String
+  workspace   Workspace        @relation(fields: [workspaceId], references: [id])
+  data        Json             @default("{}")
+  status      SubmissionStatus @default(pending)
+  submittedAt DateTime?
+  dueDate     DateTime?
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  @@index([workspaceId, status])
+}
+
+model InventoryItem {
+  id          String    @id @default(cuid())
+  name        String
+  description String    @default("")
+  quantity    Int       @default(0)
+  unit        String    @default("pcs")
+  threshold   Int       @default(5)
+  category    String    @default("General")
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id])
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([workspaceId])
+}
+
+model AutomationLog {
+  id           String           @id @default(cuid())
+  workspaceId  String
+  workspace    Workspace        @relation(fields: [workspaceId], references: [id])
+  event        String
+  action       String
+  status       AutomationStatus @default(success)
+  details      String           @default("")
+  relatedId    String?
+  relatedModel String?
+  createdAt    DateTime         @default(now())
+
+  @@index([workspaceId, createdAt])
+}
