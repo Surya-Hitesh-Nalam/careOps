@@ -93,6 +93,41 @@ export default function Login() {
                 <p style={{ textAlign: "center", marginTop: 20, fontSize: "0.875rem", color: "var(--text-secondary)" }}>
                     Don't have an account? <Link to="/register" style={{ fontWeight: 600 }}>Create one</Link>
                 </p>
+                <div style={{ marginTop: 24, paddingTop: 20, borderTop: "1px solid var(--border-light)" }}>
+                    <p style={{ fontSize: "0.75rem", textTransform: "uppercase", fontWeight: 700, color: "var(--text-tertiary)", marginBottom: 12, letterSpacing: "0.05em", textAlign: "center" }}>
+                        Judge Access / Demo Mode
+                    </p>
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                        <button
+                            type="button"
+                            onClick={() => { setEmail("demo@careops.com"); setPassword("Judge123!"); }}
+                            style={{
+                                padding: "8px", fontSize: "0.8rem", borderRadius: "var(--radius-sm)",
+                                border: "1px solid var(--border-color)", background: "var(--bg-tertiary)",
+                                cursor: "pointer", fontWeight: 600, color: "var(--text-secondary)",
+                                transition: "all 0.2s ease"
+                            }}
+                            onMouseEnter={e => { e.target.style.borderColor = "var(--accent)"; e.target.style.color = "var(--accent)"; }}
+                            onMouseLeave={e => { e.target.style.borderColor = "var(--border-color)"; e.target.style.color = "var(--text-secondary)"; }}
+                        >
+                            Login as Owner
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => { setEmail("staff@careops.com"); setPassword("Judge123!"); }}
+                            style={{
+                                padding: "8px", fontSize: "0.8rem", borderRadius: "var(--radius-sm)",
+                                border: "1px solid var(--border-color)", background: "var(--bg-tertiary)",
+                                cursor: "pointer", fontWeight: 600, color: "var(--text-secondary)",
+                                transition: "all 0.2s ease"
+                            }}
+                            onMouseEnter={e => { e.target.style.borderColor = "var(--accent)"; e.target.style.color = "var(--accent)"; }}
+                            onMouseLeave={e => { e.target.style.borderColor = "var(--border-color)"; e.target.style.color = "var(--text-secondary)"; }}
+                        >
+                            Login as Staff
+                        </button>
+                    </div>
+                </div>
             </div>
         </div>
     );
