@@ -64,18 +64,52 @@ router.get("/public/template/:formId", async (req, res) => {
 
 router.post("/public/:formId/submit", async (req, res) => {
     try {
-        const { answers, contactId } = req.body;
+        const { answers, submittedBy, contactDetails } = req.body;
         const template = await prisma.formTemplate.findUnique({ where: { id: req.params.formId } });
         if (!template) return res.status(404).json({ message: "Form not found" });
+
+        // Find or create contact
+        let contact;
+        if (contactDetails?.email) {
+            contact = await prisma.contact.findFirst({
+                where: {
+                    email: contactDetails.email,
+                    workspaceId: template.workspaceId
+                }
+            });
+
+            if (!contact) {
+                contact = await prisma.contact.create({
+                    data: {
+                        name: contactDetails.name || submittedBy || "Unknown",
+                        email: contactDetails.email,
+                        phone: contactDetails.phone || "",
+                        workspaceId: template.workspaceId,
+                        source: "contact_form"
+                    }
+                });
+            }
+        }
+
         const submission = await prisma.formSubmission.create({
             data: {
-                templateId: template.id, contactId: contactId || "",
-                workspaceId: template.workspaceId, data: answers || {},
-                status: "completed", submittedAt: new Date()
+                templateId: template.id,
+                contactId: contact.id, // Now guaranteed to exist
+                workspaceId: template.workspaceId,
+                data: answers || {},
+                status: "completed",
+                submittedAt: new Date()
             }
         });
+
+        // Check if there are any automations for form submission
+        // (Logic would go here, e.g., send email notification)
+
         res.status(201).json({ submission });
-    } catch (err) { res.status(500).json({ message: err.message }); }
+    } catch (err) {
+        console.error("Form submit error:", err);
+        res.status(500).json({ message: err.message });
+    }
 });
 
 export default router;

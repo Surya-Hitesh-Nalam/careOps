@@ -88,6 +88,8 @@ model User {
 
   ownedWorkspaces  Workspace[] @relation("WorkspaceOwner")
   assignedConversations Conversation[] @relation("AssignedTo")
+  assignedBookings Booking[] @relation("BookingStaff")
+  services         Service[]
 }
 
 model Workspace {
@@ -119,6 +121,19 @@ model Workspace {
   formSubmissions FormSubmission[]
   inventoryItems  InventoryItem[]
   automationLogs  AutomationLog[]
+  resources       Resource[]
+}
+
+model Resource {
+  id          String   @id @default(cuid())
+  name        String
+  type        String   // e.g., "Room", "Device", "Chair"
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id])
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  bookings    Booking[]
 }
 
 model Service {
@@ -130,6 +145,7 @@ model Service {
   location    String   @default("")
   color       String   @default("#6366f1")
   isActive    Boolean  @default(true)
+  resourceType String? // The type of resource required, e.g., "Room"
   workspaceId String
   workspace   Workspace @relation(fields: [workspaceId], references: [id])
   createdAt   DateTime @default(now())
@@ -137,6 +153,7 @@ model Service {
 
   availabilities Availability[]
   bookings       Booking[]
+  staff          User[]
 }
 
 model Availability {
@@ -161,6 +178,8 @@ model Booking {
   service      Service       @relation(fields: [serviceId], references: [id])
   workspaceId  String
   workspace    Workspace     @relation(fields: [workspaceId], references: [id])
+  resourceId   String?
+  resource     Resource?     @relation(fields: [resourceId], references: [id])
   date         DateTime
   time         String
   endTime      String        @default("")
@@ -168,6 +187,8 @@ model Booking {
   notes        String        @default("")
   formsStatus  FormsStatus   @default(not_required)
   reminderSent Boolean       @default(false)
+  assignedToId String?
+  assignedTo   User?         @relation("BookingStaff", fields: [assignedToId], references: [id])
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
 
@@ -212,7 +233,10 @@ model Conversation {
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
 
-  messages Message[]
+  tags             Json     @default("[]")
+  priority         String   @default("normal")
+  internalNotes    String   @default("")
+  messages         Message[]
 
   @@index([workspaceId, lastMessageAt])
 }
@@ -225,6 +249,7 @@ model Message {
   channel        MessageChannel @default(system)
   body           String
   read           Boolean        @default(false)
+  isInternal     Boolean        @default(false)
   timestamp      DateTime       @default(now())
 }
 

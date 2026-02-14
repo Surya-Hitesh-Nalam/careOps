@@ -38,11 +38,22 @@ export default function PublicContact() {
 
     return (
         <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: "var(--bg-primary)", padding: 20 }}>
-            <div style={{ width: "100%", maxWidth: 480, background: "var(--bg-secondary)", border: "1px solid var(--border-color)", borderRadius: "var(--radius-lg)", padding: 36, boxShadow: "var(--shadow-lg)" }}>
-                <div style={{ textAlign: "center", marginBottom: 24 }}>
-                    <div style={{ width: 48, height: 48, background: "linear-gradient(135deg, var(--accent), #a855f7)", borderRadius: "var(--radius-sm)", display: "inline-flex", alignItems: "center", justifyContent: "center", color: "white", marginBottom: 12 }}><Zap size={24} /></div>
-                    <h1 style={{ fontSize: "1.5rem", fontWeight: 700 }}>Get in Touch</h1>
-                    <p style={{ color: "var(--text-secondary)", fontSize: "0.9rem" }}>Send us a message and we'll respond shortly</p>
+            <div className="glass-panel" style={{
+                width: "100%", maxWidth: 480,
+                borderRadius: "var(--radius-lg)", padding: 40,
+                boxShadow: "var(--shadow-xl)"
+            }}>
+                <div style={{ textAlign: "center", marginBottom: 32 }}>
+                    <div style={{
+                        width: 56, height: 56,
+                        background: "var(--accent-gradient)",
+                        borderRadius: "var(--radius-md)",
+                        display: "inline-flex", alignItems: "center", justifyContent: "center",
+                        color: "white", marginBottom: 16,
+                        boxShadow: "var(--shadow-glow)"
+                    }}><Zap size={28} /></div>
+                    <h1 style={{ fontSize: "1.8rem", fontWeight: 800, background: "var(--accent-gradient)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>Get in Touch</h1>
+                    <p style={{ color: "var(--text-secondary)", fontSize: "1rem" }}>Send us a message and we'll respond shortly</p>
                 </div>
 
                 {error && <div className="alert alert-error">{error}</div>}
@@ -51,9 +62,9 @@ export default function PublicContact() {
                     <div className="input-group"><label>Name *</label><input value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} placeholder="Your name" required /></div>
                     <div className="input-group"><label>Email</label><input type="email" value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} placeholder="your@email.com" /></div>
                     <div className="input-group"><label>Phone</label><input value={form.phone} onChange={e => setForm({ ...form, phone: e.target.value })} placeholder="+1 234 567 8900" /></div>
-                    <div className="input-group"><label>Message *</label><textarea value={form.message} onChange={e => setForm({ ...form, message: e.target.value })} placeholder="How can we help?" required style={{ minHeight: 100 }} /></div>
-                    <button type="submit" className="btn btn-primary" disabled={submitting} style={{ width: "100%", justifyContent: "center", padding: "12px 20px" }}>
-                        <Send size={16} /> {submitting ? "Sending..." : "Send Message"}
+                    <div className="input-group"><label>Message *</label><textarea value={form.message} onChange={e => setForm({ ...form, message: e.target.value })} placeholder="How can we help?" required style={{ minHeight: 120 }} /></div>
+                    <button type="submit" className="btn btn-primary" disabled={submitting} style={{ width: "100%", justifyContent: "center", padding: "14px 20px", fontSize: "1rem" }}>
+                        <Send size={18} /> {submitting ? "Sending..." : "Send Message"}
                     </button>
                 </form>
             </div>

@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useAuth } from "../contexts/AuthContext";
 import { useTheme } from "../contexts/ThemeContext";
 import api from "../utils/api";
+import notify from "../utils/notify";
 import {
     Settings as SettingsIcon, Palette, Mail, Building, Globe,
     Save, Send, Check, Sun, Moon, AlertTriangle
@@ -19,7 +20,6 @@ const accentColors = [
     { value: "#3b82f6", label: "Blue" },
     { value: "#f97316", label: "Orange" },
 ];
-
 export default function Settings() {
     const { user } = useAuth();
     const { theme, toggleTheme, accent, setAccent } = useTheme();
@@ -34,6 +34,11 @@ export default function Settings() {
                 const { data } = await api.get(`/workspace/${user.workspace}`);
                 const ws = data.workspace;
                 setWorkspace({ name: ws.name || "", type: ws.type || "", phone: ws.phone || "", address: ws.address || "" });
+                // Load email config safely
+                if (ws.emailConfig) {
+                    const ec = typeof ws.emailConfig === "string" ? JSON.parse(ws.emailConfig) : ws.emailConfig;
+                    setEmail({ ...email, ...ec });
+                }
             } catch { }
         };
         if (user?.workspace) fetchWS();
@@ -44,11 +49,22 @@ export default function Settings() {
     };
 
     const saveEmail = async () => {
-        try { await api.put("/integrations/email", email); showSaved(); } catch { }
+        try {
+            await api.put(`/workspace/${user.workspace}`, { emailConfig: { ...email, configured: true } });
+            showSaved();
+        } catch { }
     };
 
     const testEmail = async () => {
-        try { await api.post("/integrations/test-email"); alert("Test email sent!"); } catch { alert("Failed to send test email"); }
+        const loadId = notify.loading("Sending test email...");
+        try {
+            await api.post("/integrations/test-email");
+            notify.success("Test email sent successfully!");
+        } catch (err) {
+            notify.error("Failed to send test email. Check credentials.");
+        } finally {
+            notify.dismiss(loadId);
+        }
     };
 
     const showSaved = () => { setSaved(true); setTimeout(() => setSaved(false), 2000); };

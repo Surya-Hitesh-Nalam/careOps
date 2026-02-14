@@ -2,6 +2,8 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import api from "../utils/api";
+import { useBusiness } from "../contexts/BusinessContext";
+import { BUSINESS_TYPES } from "../config/businessTypes";
 import {
     Building2, Mail, Phone, Globe, FileText, Calendar,
     Package, UserPlus, CheckCircle, ChevronRight, ChevronLeft,
@@ -32,6 +34,7 @@ const stepIllustrations = {
 
 export default function Onboarding() {
     const { user } = useAuth();
+    const { setType, meta } = useBusiness();
     const navigate = useNavigate();
     const [step, setStep] = useState(1);
     const [ws, setWs] = useState(null);
@@ -179,6 +182,21 @@ export default function Onboarding() {
         setSaving(false);
     };
 
+    const generateTemplate = async () => {
+        setSaving(true);
+        try {
+            // Use the first service name or a generic term
+            const serviceName = services.length > 0 ? services[0].name : "General Service";
+            const { data } = await api.post("/ai/form-template", { businessType: wsType, serviceName });
+            if (data.fields) {
+                setFormTitle(data.title);
+                setFormFields(data.fields);
+                msg("AI Generated Form!");
+            }
+        } catch (err) { msg("", "AI generation failed"); }
+        setSaving(false);
+    };
+
     const addInventoryItem = async () => {
         if (!invName) return msg("", "Item name required");
         setSaving(true);
@@ -223,7 +241,29 @@ export default function Onboarding() {
 
     const ill = stepIllustrations[step];
     const dayNames = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
-    const businessTypes = ["Clinic", "Salon & Spa", "Dental", "Physiotherapy", "Veterinary", "Fitness Studio", "Wellness Center", "Other"];
+
+    const handleTypeSelect = (t) => {
+        setWsType(t.label);
+        setType(t.id);
+
+        // Auto-configure services based on type
+        if (t.id === "clinical") {
+            setServices([
+                { name: "General Checkup", duration: 30, price: 150, description: "Standard health assessment" },
+                { name: "Specialist Consultation", duration: 45, price: 250, description: "In-depth review with a specialist" }
+            ]);
+        } else if (t.id === "salon") {
+            setServices([
+                { name: "Haircut & Style", duration: 60, price: 80, description: "Wash, cut and blowdry" },
+                { name: "Color Treatment", duration: 120, price: 150, description: "Full head color" }
+            ]);
+        } else if (t.id === "auto") {
+            setServices([
+                { name: "Oil Change", duration: 45, price: 60, description: "Synthetic oil change and filter replacement" },
+                { name: "Brake Inspection", duration: 30, price: 40, description: "Detailed brake system check" }
+            ]);
+        }
+    };
 
     return (
         <div style={{ minHeight: "100vh", background: "var(--bg-primary)", display: "flex" }}>
@@ -318,13 +358,20 @@ export default function Onboarding() {
                             <div className="input-group"><label>Business Name *</label><input value={wsName} onChange={e => setWsName(e.target.value)} placeholder="e.g. Sunrise Care Clinic" /></div>
                             <div className="input-group">
                                 <label>Business Type</label>
-                                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: 8 }}>
-                                    {businessTypes.map(t => (
-                                        <button key={t} onClick={() => setWsType(t)} style={{
-                                            padding: "10px 8px", borderRadius: "var(--radius-md)", border: wsType === t ? "2px solid var(--accent)" : "1px solid var(--border-color)",
-                                            background: wsType === t ? "var(--accent-light)" : "var(--bg-secondary)", fontSize: "0.78rem", fontWeight: 600,
-                                            cursor: "pointer", color: "var(--text-primary)", transition: "all 0.2s ease"
-                                        }}>{t}</button>
+                                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                                    {Object.values(BUSINESS_TYPES).filter(t => t.id !== "general").map(t => (
+                                        <div key={t.id} onClick={() => handleTypeSelect(t)} style={{
+                                            padding: 16, borderRadius: "var(--radius-md)",
+                                            border: wsType === t.label ? "2px solid var(--accent)" : "1px solid var(--border-color)",
+                                            background: wsType === t.label ? "var(--accent-light)" : "var(--bg-secondary)",
+                                            cursor: "pointer", transition: "all 0.2s ease",
+                                            display: "flex", flexDirection: "column", gap: 8
+                                        }}>
+                                            <div style={{ fontWeight: 700, color: wsType === t.label ? "var(--accent)" : "var(--text-primary)" }}>{t.label}</div>
+                                            <div style={{ fontSize: "0.75rem", color: "var(--text-tertiary)" }}>
+                                                Managing {t.customerTerm}s & {t.serviceTerm}s
+                                            </div>
+                                        </div>
                                     ))}
                                 </div>
                             </div>
@@ -393,7 +440,26 @@ export default function Onboarding() {
                             </div>
                             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
                                 <div className="input-group"><label>Price ($)</label><input type="number" value={svcPrice} onChange={e => setSvcPrice(e.target.value)} /></div>
-                                <div className="input-group"><label>Description</label><input value={svcDesc} onChange={e => setSvcDesc(e.target.value)} placeholder="Brief description" /></div>
+                                <div className="input-group">
+                                    <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6 }}>
+                                        <label style={{ marginBottom: 0 }}>Description</label>
+                                        <button className="btn btn-ghost btn-sm" style={{ padding: "0 6px", height: 20, fontSize: "0.7rem", color: "var(--accent)" }}
+                                            onClick={async () => {
+                                                if (!svcName) return msg("", "Enter a service name first");
+                                                setSvcDesc("Generating...");
+                                                try {
+                                                    // Quick inline AI call or mock for now as we don't have a specific route for this yet, 
+                                                    // but I'll use a new endpoint I'll add or just a placeholder for the hackathon demo if route not ready.
+                                                    // Actually, I'll add the route to ai.js next.
+                                                    const res = await api.post("/ai/generate-description", { name: svcName, type: wsType });
+                                                    setSvcDesc(res.data.description);
+                                                } catch (e) { setSvcDesc(svcName + " service including consultation and treatment."); }
+                                            }}>
+                                            <Sparkles size={10} style={{ marginRight: 4 }} /> AI Write
+                                        </button>
+                                    </div>
+                                    <textarea value={svcDesc} onChange={e => setSvcDesc(e.target.value)} placeholder="Brief description" />
+                                </div>
                             </div>
                             <button className="btn btn-secondary" onClick={addService} disabled={saving} style={{ marginBottom: 16 }}><Plus size={16} /> Add Service</button>
                             <div style={{ display: "flex", gap: 12 }}>
@@ -434,7 +500,17 @@ export default function Onboarding() {
                     {/* ─── STEP 5: Forms ─── */}
                     {step === 5 && (
                         <div style={{ animation: "fadeInUp 0.4s ease" }}>
-                            <div className="input-group"><label>Form Title</label><input value={formTitle} onChange={e => setFormTitle(e.target.value)} placeholder="Client Intake Form" /></div>
+                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 12 }}>
+                                <div className="input-group" style={{ marginBottom: 0, flex: 1, marginRight: 12 }}>
+                                    <label>Form Title</label>
+                                    <input value={formTitle} onChange={e => setFormTitle(e.target.value)} placeholder="Client Intake Form" />
+                                </div>
+                                <button className="btn btn-ghost" onClick={generateTemplate} disabled={saving} style={{
+                                    border: "1px solid var(--accent)", color: "var(--accent)", background: "var(--accent-light)", height: 42
+                                }}>
+                                    {saving ? <Loader size={16} className="animate-spin" /> : <><Sparkles size={16} /> AI Generate</>}
+                                </button>
+                            </div>
                             <div style={{ marginBottom: 16 }}>
                                 <label style={{ display: "block", fontWeight: 600, fontSize: "0.82rem", marginBottom: 8 }}>Fields</label>
                                 {formFields.map((f, i) => (

@@ -1,9 +1,10 @@
 import { NavLink, useLocation } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
+import { useBusiness } from "../contexts/BusinessContext";
 import {
     LayoutDashboard, Inbox, Users, Calendar, FileText,
     Package, UserCog, Settings, LogOut, ChevronLeft, Menu, Zap,
-    BarChart3, Clock, Bot, Activity, Briefcase
+    BarChart3, Clock, Bot, Activity, Briefcase, Layout
 } from "lucide-react";
 import { useState } from "react";
 
@@ -12,41 +13,45 @@ const mainLinks = [
     { to: "/analytics", icon: BarChart3, label: "Analytics" },
 ];
 
-const operationsLinks = [
-    { to: "/bookings", icon: Calendar, label: "Bookings" },
-    { to: "/calendar", icon: Clock, label: "Calendar" },
-    { to: "/contacts", icon: Users, label: "Contacts" },
-    { to: "/inbox", icon: Inbox, label: "Inbox" },
-];
-
-const managementLinks = [
-    { to: "/services", icon: Briefcase, label: "Services" },
-    { to: "/forms", icon: FileText, label: "Forms" },
-    { to: "/inventory", icon: Package, label: "Inventory" },
-    { to: "/automations", icon: Bot, label: "Automations" },
-];
-
-const systemLinks = [
-    { to: "/staff", icon: UserCog, label: "Staff" },
-    { to: "/activity", icon: Activity, label: "Activity Log" },
-    { to: "/settings", icon: Settings, label: "Settings" },
-];
-
-const staffMainLinks = [
-    { to: "/dashboard", icon: LayoutDashboard, label: "Dashboard" },
-    { to: "/bookings", icon: Calendar, label: "Bookings" },
-    { to: "/calendar", icon: Clock, label: "Calendar" },
-    { to: "/contacts", icon: Users, label: "Contacts" },
-    { to: "/inbox", icon: Inbox, label: "Inbox" },
-    { to: "/forms", icon: FileText, label: "Forms" },
-];
+// Links moved inside component to access context
 
 export default function Sidebar() {
     const { user, logout } = useAuth();
+    const { label } = useBusiness();
     const [collapsed, setCollapsed] = useState(false);
     const [mobileOpen, setMobileOpen] = useState(false);
     const location = useLocation();
     const isOwner = user?.role === "owner";
+
+    const operationsLinks = [
+        { to: "/bookings", icon: Calendar, label: "Bookings" },
+        { to: "/calendar", icon: Clock, label: "Calendar" },
+        { to: "/contacts", icon: Users, label: `${label.customer}s` },
+        { to: "/inbox", icon: Inbox, label: "Inbox" },
+    ];
+
+    const managementLinks = [
+        { to: "/services", icon: Briefcase, label: `${label.service}s` },
+        { to: "/resources", icon: Layout, label: "Resources" },
+        { to: "/forms", icon: FileText, label: "Forms" },
+        { to: "/inventory", icon: Package, label: "Inventory" },
+        { to: "/automations", icon: Bot, label: "Automations" },
+    ];
+
+    const systemLinks = [
+        { to: "/staff", icon: UserCog, label: "Staff" },
+        { to: "/activity", icon: Activity, label: "Activity Log" },
+        { to: "/settings", icon: Settings, label: "Settings" },
+    ];
+
+    const staffMainLinks = [
+        { to: "/dashboard", icon: LayoutDashboard, label: "Dashboard" },
+        { to: "/bookings", icon: Calendar, label: "Bookings" },
+        { to: "/calendar", icon: Clock, label: "Calendar" },
+        { to: "/contacts", icon: Users, label: `${label.customer}s` },
+        { to: "/inbox", icon: Inbox, label: "Inbox" },
+        { to: "/forms", icon: FileText, label: "Forms" },
+    ];
 
     const renderSection = (label, links) => (
         <div style={{ marginBottom: 4 }}>
@@ -68,8 +73,9 @@ export default function Sidebar() {
                             padding: collapsed ? "10px 0" : "9px 14px",
                             justifyContent: collapsed ? "center" : "flex-start",
                             borderRadius: "var(--radius-sm)",
-                            color: active ? "var(--accent)" : "var(--text-secondary)",
-                            background: active ? "var(--accent-light)" : "transparent",
+                            color: active ? "var(--text-primary)" : "var(--text-secondary)",
+                            background: active ? "linear-gradient(90deg, rgba(99, 102, 241, 0.1), rgba(168, 85, 247, 0.05))" : "transparent",
+                            border: active ? "1px solid rgba(99, 102, 241, 0.1)" : "1px solid transparent",
                             marginBottom: 1,
                             marginLeft: collapsed ? 0 : 8,
                             marginRight: collapsed ? 0 : 8,
@@ -77,20 +83,21 @@ export default function Sidebar() {
                             fontWeight: active ? 600 : 400,
                             textDecoration: "none",
                             transition: "all var(--transition-fast)",
-                            position: "relative"
+                            position: "relative",
+                            boxShadow: active ? "var(--shadow-xs)" : "none"
                         }}
                     >
                         {active && (
                             <div style={{
                                 position: "absolute",
-                                left: collapsed ? "50%" : -8,
+                                left: collapsed ? "50%" : 0,
                                 top: collapsed ? "auto" : "50%",
-                                bottom: collapsed ? -1 : "auto",
+                                bottom: collapsed ? 0 : "auto",
                                 transform: collapsed ? "translateX(-50%)" : "translateY(-50%)",
-                                width: collapsed ? 20 : 3,
-                                height: collapsed ? 3 : 20,
-                                borderRadius: 2,
-                                background: "var(--accent-gradient)"
+                                width: collapsed ? 24 : 3,
+                                height: collapsed ? 3 : 24,
+                                borderRadius: "0 2px 2px 0",
+                                background: "var(--accent)"
                             }} />
                         )}
                         <Icon size={19} />

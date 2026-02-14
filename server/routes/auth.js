@@ -54,16 +54,21 @@ router.get("/me", async (req, res) => {
         if (req.headers.authorization?.startsWith("Bearer")) {
             token = req.headers.authorization.split(" ")[1];
         }
-        if (!token) return res.status(401).json({ message: "Not authorized" });
+        if (!token) return res.status(401).json({ message: "Not authorized (no token)" });
 
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
-        const user = await prisma.user.findUnique({ where: { id: decoded.id } });
+        const user = await prisma.user.findUnique({
+            where: { id: decoded.id },
+            include: { workspace: true } // Include workspace to ensure it exists
+        });
+
         if (!user) return res.status(401).json({ message: "User not found" });
 
         const { password: _, ...safeUser } = user;
         res.json({ user: safeUser });
-    } catch {
-        res.status(401).json({ message: "Not authorized" });
+    } catch (err) {
+        console.error("Auth Me Error:", err);
+        res.status(401).json({ message: "Not authorized (invalid token)" });
     }
 });
 

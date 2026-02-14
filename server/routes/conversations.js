@@ -46,17 +46,48 @@ router.get("/:id", protect, checkPermission("inbox"), async (req, res) => {
 
 router.post("/:id/reply", protect, checkPermission("inbox"), async (req, res) => {
     try {
-        const { body, channel } = req.body;
+        const { body, channel, isInternal } = req.body;
         if (!body) return res.status(400).json({ message: "Message body is required" });
+
         await prisma.message.create({
-            data: { conversationId: req.params.id, sender: "staff", channel: channel || "email", body, read: true, timestamp: new Date() }
+            data: {
+                conversationId: req.params.id,
+                sender: "staff",
+                channel: channel || "email",
+                body,
+                read: true,
+                isInternal: !!isInternal,
+                timestamp: new Date()
+            }
         });
+
+        const updateData = { assignedToId: req.user.id };
+        // Only update last message if it's public
+        if (!isInternal) {
+            updateData.lastMessage = body;
+            updateData.lastMessageAt = new Date();
+        }
+
         const conversation = await prisma.conversation.update({
             where: { id: req.params.id },
-            data: { lastMessage: body, lastMessageAt: new Date(), assignedToId: req.user.id },
+            data: updateData,
             include: { contact: true, messages: { orderBy: { timestamp: "asc" } } }
         });
-        await onStaffReply(conversation.id);
+
+        if (!isInternal) await onStaffReply(conversation.id);
+
+        res.json({ conversation });
+    } catch (err) { res.status(500).json({ message: err.message }); }
+});
+
+router.put("/:id", protect, checkPermission("inbox"), async (req, res) => {
+    try {
+        const { tags, priority, internalNotes } = req.body;
+        const conversation = await prisma.conversation.update({
+            where: { id: req.params.id },
+            data: { tags, priority, internalNotes },
+            include: { contact: true }
+        });
         res.json({ conversation });
     } catch (err) { res.status(500).json({ message: err.message }); }
 });

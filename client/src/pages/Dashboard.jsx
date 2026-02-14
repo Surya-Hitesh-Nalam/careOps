@@ -7,6 +7,7 @@ import {
     AlertTriangle, Clock, ArrowRight, TrendingUp, CheckCircle2,
     XCircle, Inbox, BarChart3, UserPlus, Sparkles, Brain, Lightbulb, Zap
 } from "lucide-react";
+import StaffDashboard from "./StaffDashboard";
 
 export default function Dashboard() {
     const { user } = useAuth();
@@ -30,6 +31,12 @@ export default function Dashboard() {
     };
 
     if (loading) return <div className="page-container"><div className="loading-spinner" /></div>;
+
+    // Redirect or render Staff Dashboard
+    if (user?.role === "staff") {
+        return <StaffDashboard />;
+    }
+
     if (!stats) return <div className="page-container"><div className="empty-state"><h3>Could not load dashboard</h3></div></div>;
 
     const statCards = [
@@ -78,53 +85,97 @@ export default function Dashboard() {
             </div>
 
             {/* AI Insights Card */}
-            <div className="card" style={{ marginBottom: 20, overflow: "hidden", position: "relative" }}>
+            <div className="card glass-panel" style={{ marginBottom: 24, overflow: "hidden", position: "relative", border: "1px solid var(--border-color)", background: "var(--bg-secondary)" }}>
                 <div style={{
-                    position: "absolute", top: 0, left: 0, right: 0, height: 3,
-                    background: "linear-gradient(90deg, var(--accent), #a855f7, #ec4899, var(--accent))",
+                    position: "absolute", top: 0, left: 0, right: 0, height: 4,
+                    background: "var(--accent-gradient)",
                     backgroundSize: "200% 100%",
                     animation: "shimmer 3s ease-in-out infinite"
                 }} />
-                <div className="card-header" style={{ paddingTop: 16 }}>
-                    <span className="card-title" style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                        <Sparkles size={18} color="var(--accent)" /> AI Business Insights
-                        <span style={{ fontSize: "0.7rem", padding: "2px 8px", borderRadius: 12, background: "linear-gradient(135deg, var(--accent), #a855f7)", color: "white", fontWeight: 600 }}>GEMINI</span>
-                    </span>
-                    <button className="btn btn-ghost btn-sm" onClick={fetchAiInsights} disabled={aiLoading}>
-                        <Brain size={14} /> {aiLoading ? "Analyzing..." : aiInsights ? "Refresh" : "Generate Insights"}
+                <div className="card-header" style={{ paddingTop: 20 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                        <div style={{
+                            width: 36, height: 36, borderRadius: 10,
+                            background: "var(--accent-gradient)",
+                            display: "flex", alignItems: "center", justifyContent: "center",
+                            boxShadow: "var(--shadow-glow)"
+                        }}>
+                            <Sparkles size={18} color="white" />
+                        </div>
+                        <div>
+                            <span className="card-title" style={{ fontSize: "1.05rem", display: "block" }}>AI Business Monitor</span>
+                            <span style={{ fontSize: "0.75rem", color: "var(--text-tertiary)" }}>Powered by Gemini 2.0 Flash</span>
+                        </div>
+                    </div>
+                    <button className="btn btn-secondary btn-sm glass-button" onClick={fetchAiInsights} disabled={aiLoading}>
+                        <Brain size={14} /> {aiLoading ? "Analyzing..." : aiInsights ? "Refresh Insights" : "Generate Report"}
                     </button>
                 </div>
+
                 {!aiInsights && !aiLoading && (
-                    <div className="empty-state" style={{ padding: 32 }}>
-                        <Sparkles size={32} style={{ opacity: 0.5, color: "var(--accent)" }} />
-                        <p style={{ color: "var(--text-secondary)" }}>Click "Generate Insights" to get AI-powered business analysis</p>
+                    <div className="empty-state" style={{ padding: "40px 32px" }}>
+                        <div style={{
+                            width: 64, height: 64, borderRadius: "50%", background: "var(--accent-light)",
+                            display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 16
+                        }}>
+                            <Sparkles size={28} color="var(--accent)" />
+                        </div>
+                        <h3 style={{ marginBottom: 8 }}>Unlock Business Intelligence</h3>
+                        <p style={{ color: "var(--text-secondary)", marginBottom: 24 }}>
+                            Gemini will analyze your bookings, inventory, and improved customer interactions to provide actionable strategic advice.
+                        </p>
+                        <button className="btn btn-primary" onClick={fetchAiInsights}>
+                            <Zap size={16} /> Analyze My Business
+                        </button>
                     </div>
                 )}
+
                 {aiLoading && (
-                    <div style={{ padding: 32, textAlign: "center" }}>
-                        <div className="loading-spinner" />
-                        <p style={{ marginTop: 8, color: "var(--text-secondary)", fontSize: "0.85rem" }}>Gemini is analyzing your business data...</p>
+                    <div style={{ padding: "60px 32px", textAlign: "center" }}>
+                        <div className="loading-spinner" style={{ width: 40, height: 40, borderWidth: 4, marginBottom: 20 }} />
+                        <h3 style={{ fontSize: "1.1rem", marginBottom: 8 }}>Analyzing {stats?.bookings?.today || "business"} data...</h3>
+                        <p style={{ color: "var(--text-secondary)", fontSize: "0.9rem" }}>Generating strategic insights tailored to your business type.</p>
                     </div>
                 )}
+
                 {aiInsights?.insights && !aiLoading && (
-                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, padding: "0 16px 16px" }}>
-                        {aiInsights.insights.map((insight, i) => {
-                            const Icon = insightIcons[insight.type] || Lightbulb;
-                            const colors = { success: "#10b981", warning: "#f59e0b", info: "#6366f1", tip: "#8b5cf6" };
-                            return (
-                                <div key={i} style={{
-                                    padding: 14, borderRadius: "var(--radius-md)",
-                                    background: "var(--bg-primary)", border: "1px solid var(--border-light)",
-                                    animation: `fadeInUp 0.3s ease ${i * 0.1}s both`
-                                }}>
-                                    <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 6 }}>
-                                        <Icon size={14} color={colors[insight.type] || "var(--accent)"} />
-                                        <span style={{ fontWeight: 700, fontSize: "0.8rem", color: colors[insight.type] || "var(--accent)" }}>{insight.title}</span>
+                    <div style={{ padding: "0 24px 24px" }}>
+                        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: 16 }}>
+                            {aiInsights.insights.map((insight, i) => {
+                                const Icon = insightIcons[insight.type] || Lightbulb;
+                                const styleConfig = {
+                                    success: { bg: "var(--success-light)", color: "var(--success)", border: "rgba(16, 185, 129, 0.2)" },
+                                    warning: { bg: "var(--warning-light)", color: "var(--warning)", border: "rgba(245, 158, 11, 0.2)" },
+                                    info: { bg: "var(--info-light)", color: "var(--info)", border: "rgba(59, 130, 246, 0.2)" },
+                                    tip: { bg: "var(--accent-light)", color: "var(--accent)", border: "rgba(99, 102, 241, 0.2)" }
+                                };
+                                const conf = styleConfig[insight.type] || styleConfig.info;
+
+                                return (
+                                    <div key={i} style={{
+                                        padding: 18, borderRadius: "var(--radius-md)",
+                                        background: "var(--bg-primary)",
+                                        border: `1px solid ${conf.border}`,
+                                        animation: `fadeInUp 0.4s ease ${i * 0.1}s both`,
+                                        position: "relative", overflow: "hidden"
+                                    }}>
+                                        <div style={{ position: "absolute", top: 0, left: 0, width: 4, height: "100%", background: conf.color }} />
+                                        <div style={{ display: "flex", alignItems: "flex-start", gap: 12 }}>
+                                            <div style={{
+                                                width: 32, height: 32, borderRadius: 8, background: conf.bg,
+                                                display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0
+                                            }}>
+                                                <Icon size={16} color={conf.color} />
+                                            </div>
+                                            <div>
+                                                <h4 style={{ fontSize: "0.95rem", fontWeight: 700, marginBottom: 4, color: "var(--text-primary)" }}>{insight.title}</h4>
+                                                <p style={{ fontSize: "0.85rem", color: "var(--text-secondary)", lineHeight: 1.5, margin: 0 }}>{insight.insight}</p>
+                                            </div>
+                                        </div>
                                     </div>
-                                    <p style={{ fontSize: "0.82rem", color: "var(--text-secondary)", lineHeight: 1.4, margin: 0 }}>{insight.insight}</p>
-                                </div>
-                            );
-                        })}
+                                );
+                            })}
+                        </div>
                     </div>
                 )}
             </div>

@@ -82,30 +82,46 @@ export default function PublicBooking() {
                 <div style={{ textAlign: "center", marginBottom: 32 }}>
                     <div style={{
                         width: 48, height: 48,
-                        background: "linear-gradient(135deg, var(--accent), #a855f7)",
+                        background: "var(--accent-gradient)",
                         borderRadius: "var(--radius-sm)",
                         display: "inline-flex", alignItems: "center", justifyContent: "center",
-                        color: "white", marginBottom: 12
+                        color: "white", marginBottom: 12,
+                        boxShadow: "var(--shadow-glow)"
                     }}><Zap size={24} /></div>
-                    <h1 style={{ fontSize: "1.5rem", fontWeight: 700 }}>{workspace?.name || "Book an Appointment"}</h1>
-                    <p style={{ color: "var(--text-secondary)", fontSize: "0.9rem" }}>Select a service and pick your preferred time</p>
+                    <h1 style={{ fontSize: "1.8rem", fontWeight: 800, letterSpacing: "-0.02em", background: "var(--accent-gradient)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>{workspace?.name || "Book an Appointment"}</h1>
+                    <p style={{ color: "var(--text-secondary)", fontSize: "1rem" }}>Select a service and pick your preferred time</p>
                 </div>
 
                 {error && <div className="alert alert-error">{error}</div>}
 
                 {step === 1 && (
                     <div>
-                        <h2 style={{ fontSize: "1.1rem", fontWeight: 600, marginBottom: 16 }}>Choose a Service</h2>
+                        <h2 style={{ fontSize: "1.1rem", fontWeight: 600, marginBottom: 16, color: "var(--text-primary)" }}>Choose a Service</h2>
                         <div style={{ display: "grid", gap: 12 }}>
                             {services.map(s => (
-                                <div key={s.id} className="card" onClick={() => { setSelectedService(s); setStep(2); }}
-                                    style={{ cursor: "pointer", transition: "all var(--transition-fast)", border: "2px solid var(--border-color)" }}
-                                    onMouseEnter={e => e.currentTarget.style.borderColor = "var(--accent)"}
-                                    onMouseLeave={e => e.currentTarget.style.borderColor = "var(--border-color)"}>
-                                    <h3 style={{ fontWeight: 600, marginBottom: 6 }}>{s.name}</h3>
-                                    <div style={{ display: "flex", gap: 16, fontSize: "0.85rem", color: "var(--text-secondary)" }}>
+                                <div key={s.id} className="card glass-panel" onClick={() => { setSelectedService(s); setStep(2); }}
+                                    style={{ cursor: "pointer", transition: "all 0.3s ease", border: "1px solid var(--border-color)", padding: 24 }}
+                                    onMouseEnter={e => {
+                                        e.currentTarget.style.borderColor = "var(--accent)";
+                                        e.currentTarget.style.transform = "translateY(-2px)";
+                                        e.currentTarget.style.boxShadow = "var(--shadow-md)";
+                                    }}
+                                    onMouseLeave={e => {
+                                        e.currentTarget.style.borderColor = "var(--border-color)";
+                                        e.currentTarget.style.transform = "none";
+                                        e.currentTarget.style.boxShadow = "none";
+                                    }}>
+                                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+                                        <div>
+                                            <h3 style={{ fontWeight: 700, marginBottom: 6, fontSize: "1.1rem" }}>{s.name}</h3>
+                                            <p style={{ fontSize: "0.9rem", color: "var(--text-secondary)", marginBottom: 12 }}>{s.description || "No description"}</p>
+                                        </div>
+                                        <div style={{ background: "var(--accent-light)", color: "var(--accent)", padding: "4px 10px", borderRadius: 20, fontSize: "0.8rem", fontWeight: 700 }}>
+                                            ${s.price}
+                                        </div>
+                                    </div>
+                                    <div style={{ display: "flex", gap: 16, fontSize: "0.85rem", color: "var(--text-tertiary)" }}>
                                         <span style={{ display: "flex", alignItems: "center", gap: 4 }}><Clock size={14} /> {s.duration} min</span>
-                                        {s.price > 0 && <span style={{ display: "flex", alignItems: "center", gap: 4 }}><DollarSign size={14} /> ${s.price}</span>}
                                         {s.location && <span style={{ display: "flex", alignItems: "center", gap: 4 }}><MapPin size={14} /> {s.location}</span>}
                                     </div>
                                 </div>
@@ -115,35 +131,41 @@ export default function PublicBooking() {
                 )}
 
                 {step === 2 && (
-                    <div style={{ animation: "fadeIn 0.3s ease" }}>
-                        <button className="btn btn-ghost btn-sm" onClick={() => setStep(1)} style={{ marginBottom: 16 }}>← Change service</button>
-                        <div className="card" style={{ marginBottom: 16, background: "var(--accent-light)", border: "1px solid var(--accent)" }}>
-                            <div style={{ fontWeight: 600, color: "var(--accent)" }}>{selectedService?.name}</div>
-                            <div style={{ fontSize: "0.85rem", color: "var(--text-secondary)" }}>{selectedService?.duration} min{selectedService?.price > 0 ? ` · $${selectedService.price}` : ""}</div>
+                    <div style={{ animation: "fadeInUp 0.4s ease" }}>
+                        <button className="btn btn-ghost btn-sm" onClick={() => setStep(1)} style={{ marginBottom: 16 }}>← Create Booking</button>
+                        <div className="card glass-panel" style={{ marginBottom: 24, background: "var(--accent-light)", border: "1px solid var(--accent)" }}>
+                            <div style={{ fontWeight: 700, color: "var(--accent)", fontSize: "1.1rem" }}>{selectedService?.name}</div>
+                            <div style={{ fontSize: "0.9rem", color: "var(--text-secondary)" }}>{selectedService?.duration} min{selectedService?.price > 0 ? ` · $${selectedService.price}` : ""}</div>
                         </div>
-                        <div className="grid-2">
-                            <div className="input-group"><label>Full Name *</label><input value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} placeholder="Your name" /></div>
-                            <div className="input-group"><label>Email *</label><input type="email" value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} placeholder="your@email.com" /></div>
-                        </div>
-                        <div className="input-group"><label>Phone</label><input value={form.phone} onChange={e => setForm({ ...form, phone: e.target.value })} placeholder="+1 234 567 8900" /></div>
-                        <div className="grid-2">
-                            <div className="input-group"><label>Date *</label><input type="date" value={form.date} onChange={e => handleDateChange(e.target.value)} min={new Date().toISOString().split("T")[0]} /></div>
-                            <div className="input-group"><label>Time *</label>
-                                {slots.length > 0 ? (
-                                    <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-                                        {slots.map(s => (
-                                            <button key={typeof s === 'string' ? s : s.start} className={`btn btn-sm ${form.time === (typeof s === 'string' ? s : s.start) ? "btn-primary" : "btn-secondary"}`} onClick={() => setForm({ ...form, time: typeof s === 'string' ? s : s.start })}>{typeof s === 'string' ? s : s.start}</button>
-                                        ))}
-                                    </div>
-                                ) : (
-                                    <input type="time" value={form.time} onChange={e => setForm({ ...form, time: e.target.value })} />
-                                )}
+                        <div className="card glass-panel" style={{ padding: 32 }}>
+                            <div className="grid-2">
+                                <div className="input-group"><label>Full Name *</label><input value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} placeholder="Your name" /></div>
+                                <div className="input-group"><label>Email *</label><input type="email" value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} placeholder="your@email.com" /></div>
                             </div>
+                            <div className="input-group"><label>Phone</label><input value={form.phone} onChange={e => setForm({ ...form, phone: e.target.value })} placeholder="+1 234 567 8900" /></div>
+                            <div className="grid-2">
+                                <div className="input-group"><label>Date *</label><input type="date" value={form.date} onChange={e => handleDateChange(e.target.value)} min={new Date().toISOString().split("T")[0]} /></div>
+                                <div className="input-group"><label>Time *</label>
+                                    {slots.length > 0 ? (
+                                        <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                                            {slots.map(s => (
+                                                <button key={typeof s === 'string' ? s : s.start}
+                                                    className={`btn btn-sm ${form.time === (typeof s === 'string' ? s : s.start) ? "btn-primary" : "btn-secondary"}`}
+                                                    onClick={() => setForm({ ...form, time: typeof s === 'string' ? s : s.start })}
+                                                    style={{ transition: "all 0.2s ease" }}
+                                                >{typeof s === 'string' ? s : s.start}</button>
+                                            ))}
+                                        </div>
+                                    ) : (
+                                        <input type="time" value={form.time} onChange={e => setForm({ ...form, time: e.target.value })} />
+                                    )}
+                                </div>
+                            </div>
+                            <div className="input-group"><label>Notes</label><textarea value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })} placeholder="Anything we should know?" /></div>
+                            <button className="btn btn-primary" onClick={submitBooking} disabled={submitting} style={{ width: "100%", justifyContent: "center", padding: "14px 20px", fontSize: "1rem" }}>
+                                {submitting ? <div className="loading-spinner" /> : "Confirm Booking"}
+                            </button>
                         </div>
-                        <div className="input-group"><label>Notes</label><textarea value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })} placeholder="Anything we should know?" /></div>
-                        <button className="btn btn-primary" onClick={submitBooking} disabled={submitting} style={{ width: "100%", justifyContent: "center", padding: "12px 20px" }}>
-                            {submitting ? "Booking..." : "Confirm Booking"}
-                        </button>
                     </div>
                 )}
             </div>

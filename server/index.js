@@ -16,6 +16,7 @@ import dashboardRoutes from "./routes/dashboard.js";
 import publicRoutes from "./routes/public.js";
 import integrationRoutes from "./routes/integrations.js";
 import aiRoutes from "./routes/ai.js";
+import resourceRoutes from "./routes/resources.js";
 
 const app = express();
 
@@ -36,6 +37,7 @@ app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/public", publicRoutes);
 app.use("/api/integrations", integrationRoutes);
 app.use("/api/ai", aiRoutes);
+app.use("/api/resources", resourceRoutes);
 
 app.get("/api/health", (req, res) => res.json({ status: "ok", db: "postgresql", time: new Date().toISOString() }));
 
